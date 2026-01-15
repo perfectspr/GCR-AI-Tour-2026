@@ -62,6 +62,20 @@ ContentStrategyAgent (决策转译 Agent)
 
 ## 快速开始
 
+### 端到端测试（推荐先运行）
+
+最快的方式是运行自动化测试脚本：
+
+```bash
+# Mock 模式（无需 Azure 认证，使用本地工具）
+./scripts/test_e2e.sh mock
+
+# 或使用 Python 版本
+python scripts/test_e2e.py --mode mock
+```
+
+测试会自动执行所有步骤并验证输出。详见 [测试指南](#测试和验证)。
+
 ### 前置要求
 
 ```bash
@@ -75,14 +89,24 @@ pip install agent-framework
 az login
 ```
 
-### 环境变量
+### Azure 认证配置
 
-创建 `.env` 文件：
+本项目支持多种认证方式。详细配置指南请参阅：
+
+📖 **[Azure 认证配置指南](AZURE_CREDENTIALS.md)**
+
+快速配置：
 
 ```bash
-# Azure AI Foundry 配置（用于 LLM Agent）
-AZURE_AI_PROJECT_ENDPOINT=https://your-project.api.azureml.ms
-AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-4
+# 复制环境变量模板
+cp .env.example .env
+
+# 编辑 .env 文件，填入你的 Azure 信息
+# AZURE_AI_PROJECT_ENDPOINT=https://your-project.api.azureml.ms
+# AZURE_AI_MODEL_DEPLOYMENT_NAME=gpt-4
+
+# 使用 Azure CLI 登录（推荐）
+az login
 ```
 
 ### 步骤 1: 配置热点 API
@@ -217,6 +241,71 @@ generated/social_insight_output/
 }
 ```
 
+## 测试和验证
+
+### 自动化端到端测试
+
+项目提供了完整的端到端测试脚本：
+
+#### Bash 版本
+
+```bash
+# Mock 模式（推荐首次运行）
+./scripts/test_e2e.sh mock
+
+# Azure AI 模式（需要认证）
+./scripts/test_e2e.sh azure
+```
+
+#### Python 版本
+
+```bash
+# Mock 模式
+python scripts/test_e2e.py --mode mock
+
+# Azure AI 模式（带详细输出）
+python scripts/test_e2e.py --mode azure --verbose
+```
+
+测试脚本会自动：
+1. ✅ 验证 Python 环境
+2. ✅ 检查必需文件
+3. ✅ 验证工作流 YAML
+4. ✅ 测试工具注册表
+5. ✅ 生成可执行 runner
+6. ✅ 检查 Azure 认证（azure 模式）
+7. ✅ 运行完整工作流
+8. ✅ 验证所有输出文件
+
+### 测试场景
+
+#### Mock 模式
+- **用途**: 快速验证工作流逻辑
+- **特点**: 不调用 LLM，使用确定性 fallback 工具
+- **速度**: 快（约 10-30 秒）
+- **成本**: 免费
+
+#### Azure AI 模式
+- **用途**: 测试真实 LLM 集成
+- **特点**: 调用 Azure AI Foundry agents
+- **速度**: 较慢（约 2-5 分钟）
+- **成本**: 消耗 Azure tokens
+
+### 查看测试结果
+
+测试成功后，查看生成的报告：
+
+```bash
+# 查看完整报告
+cat generated/social_insight_output/report.md
+
+# 查看热点聚类
+cat generated/social_insight_output/clusters/hotspots.json
+
+# 查看社会洞察
+cat generated/social_insight_output/insights/insights.json
+```
+
 ## 本地工具测试
 
 测试共享工具注册表：
@@ -293,11 +382,25 @@ python .github/skills/maf-shared-tools/scripts/call_shared_tool.py \
 - 运行 `az login`
 - 检查 RBAC 权限
 - 验证 `AZURE_AI_MODEL_DEPLOYMENT_NAME` 和 `AZURE_AI_PROJECT_ENDPOINT`
+- 详见 [Azure 认证配置指南](AZURE_CREDENTIALS.md)
 
 ### 工具未找到
 
 - 检查 `shared_tools/maf_shared_tools_registry.py` 是否正确加载
 - 运行 `python shared_tools/maf_shared_tools_registry.py` 查看已注册工具
+
+### 端到端测试失败
+
+- 运行 `./scripts/test_e2e.sh mock` 查看详细错误
+- 检查所有必需文件是否存在
+- 确保 Python 3.8+ 已安装
+
+## 文档索引
+
+- **[README.md](README.md)** - 本文档：架构说明、快速开始
+- **[EXAMPLES.md](EXAMPLES.md)** - 详细使用示例和测试步骤
+- **[AZURE_CREDENTIALS.md](AZURE_CREDENTIALS.md)** - Azure 认证配置完整指南
+- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - 技术实现细节
 
 ## 许可证
 
@@ -308,3 +411,5 @@ python .github/skills/maf-shared-tools/scripts/call_shared_tool.py \
 - [Microsoft Agent Framework 文档](https://learn.microsoft.com/agent-framework/overview/agent-framework-overview)
 - [Microsoft Agent Framework Python](https://github.com/microsoft/agent-framework/tree/main/python)
 - [MAF Python 示例](https://github.com/microsoft/agent-framework/tree/main/python/samples)
+- [Azure AI Foundry Portal](https://ai.azure.com)
+- [Azure CLI 文档](https://docs.microsoft.com/cli/azure/)
