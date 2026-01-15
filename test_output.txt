@@ -1,0 +1,77 @@
+[0;34m========================================[0m
+[0;34mSocial Insight Workflow E2E Test[0m
+[0;34m========================================[0m
+
+Mode: [1;33mmock[0m
+Repository: /home/runner/work/gcr-ai-tour/gcr-ai-tour
+
+[0;34m[Step 1/8] Verifying Python environment...[0m
+[0;32m✓[0m Python found: Python 3.12.3
+
+[0;34m[Step 2/8] Checking prerequisites...[0m
+[0;32m✓[0m Config file exists
+[0;32m✓[0m Workflow YAML exists
+
+[0;34m[Step 3/8] Validating workflow YAML...[0m
+OK: no issues found.
+[0;32m✓[0m Workflow YAML is valid
+
+[0;34m[Step 4/8] Testing shared tools registry...[0m
+[0;32m✓[0m Found 4 registered tools
+
+[0;34m[Step 5/8] Generating workflow runner...[0m
+[0;34mℹ[0m Removing existing runner...
+Generated runner at: /home/runner/work/gcr-ai-tour/gcr-ai-tour/generated/social_insight_runner
+[0;32m✓[0m Runner generated at generated/social_insight_runner/
+
+[0;34m[Step 6/8] Skipping Azure credentials (mock mode)[0m
+[0;34mℹ[0m Using mock mode - no Azure credentials required
+
+[0;34m[Step 7/8] Running workflow...[0m
+[0;34mℹ[0m Running in MOCK mode (using fallback tools)
+🚀 社会洞察多Agent工作流启动
+本工作流将执行以下步骤:
+1. 信号采集 (SignalIngestionAgent)
+2. 热点聚类 (HotspotClusteringAgent)
+3. 社会洞察 (InsightAgent)
+4. 策略生成 (ContentStrategyAgent)
+📡 Phase 1: 正在采集多平台热点信号...
+✅ 信号采集完成: 
+🔍 Phase 2: 正在进行热点聚类分析...
+聚类分析完成，结果: (mock)
+🔄 执行兜底聚类策略...
+✅ 热点聚类完成
+🧠 Phase 3: 正在生成社会洞察...
+洞察分析完成，结果: (mock)
+🔄 执行兜底洞察生成...
+✅ 社会洞察完成
+📋 Phase 4: 正在生成内容策略建议...
+策略生成完成
+🔄 执行兜底报告生成...
+✅ 内容策略生成完成
+🎉 社会洞察工作流执行完成！
+
+**输出文件**:
+- 原始信号: generated/social_insight_output/raw_signals.json
+- 热点聚类: generated/social_insight_output/clusters/hotspots.json
+- 社会洞察: generated/social_insight_output/insights/insights.json
+- 策略报告: generated/social_insight_output/report.md
+
+所有中间结果均已落盘，支持回溯和审计。
+[0;32m✓[0m Workflow execution completed
+
+[0;34m[Step 8/8] Verifying outputs...[0m
+[0;32m✓[0m raw_signals.json (8.0K)
+[0;32m✓[0m clusters/hotspots.json (4.0K)
+[0;32m✓[0m insights/insights.json (4.0K)
+[0;32m✓[0m report.md (4.0K)
+
+[0;32m========================================[0m
+[0;32m✓ E2E Test PASSED[0m
+[0;32m========================================[0m
+
+Output directory: [0;34mgenerated/social_insight_output[0m
+
+View the final report:
+  [1;33mcat generated/social_insight_output/report.md[0m
+
