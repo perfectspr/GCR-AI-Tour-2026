@@ -1,146 +1,167 @@
-<!-- updated: 21658223878-1 @ 12 -->
+<!-- updated: 22813306426-1 @ 13 -->
 
 # Tech Intelligence Report（过去 24h）
 
 ## 24h 摘要
-- **IDE 原生 Agent 正在“吞入口”**：Apple 在 **Xcode 26.3** 把 Claude Agent / OpenAI Codex 级别的“任务执行型编码代理”集成进 IDE，并以 **MCP（Model Context Protocol）** 打开第三方工具接入通道，意味着开发者默认工作流从 *chat/autocomplete* 进入 *agentic execution*。
-- **Agent 安全从“内容安全”升级为“控制面安全”**：Moltbook/OpenClaw 事件将“自传播 prompt（viral prompt）”与“海量 API keys 泄露”并置，提示企业需要把 prompt 注入、跨会话污染、越权工具调用纳入威胁建模与审计基线。
-- **市场对“AI 替代 SaaS”叙事显著敏感**：多条金融媒体将软件股波动与 AI 自动化/替代绑定，带动“再定价”预期，迫使 SaaS 在 ROI 证据、定价结构、续约话术上更快调整。
-- **资本 + 算力 + 人才的博弈继续升温**：围绕 Anthropic 高估值要约、OpenAI 融资与 Nvidia 参与传闻/变动、以及人员流动的报道，强化了“供给绑定与控制权重排”的不确定性。
-- **合规议题双线推进**：一边是法国对 X（Grok 相关）调查升级；另一边是 Google 反垄断补救案上诉与 WhatsApp 隐私争议，显示“平台分发 + 数据使用”在多法域同时加压。
-- **基础设施与 DevSecOps 有可落地更新**：Cloudflare R2 Local Uploads 改写跨洲上传体验；GitHub Dependabot 上 OIDC、Proxy 开源；AWS 在多账号复制与多 Region 身份韧性上补齐关键拼图。
+- **Gov/Defense 合作把“AI 落地”推向“治理与合规”核心议题**：OpenAI 与五角大楼涉密网络合作引发内部震荡，机器人负责人辞职并公开提到“护栏未定义/推进过快”，对政府采购与企业级风控提出更硬的可审计要求。（H01）
+- **AI Security 从“辅助写代码”升级成“可执行代理的攻防竞赛”**：Claude 协助 Firefox 安全改进的案例与“AI agent worm 迫近”的讨论共振，提示组织需要把 agent 权限、工具调用与隔离纳入 SDL/红队常规流程。（H02）
+- **Edge/on-device 进入工具链换代期**：TensorFlow 2.21 推进 LiteRT 作为端侧推理框架主线，叠加 PyTorch-to-edge 与 NPU 加速叙事，端侧栈的迁移评估窗口已打开。（H03）
+- **Agent Economy 的金融底座提前开工，但监管摩擦已同步上升**：稳定币/支付基础设施押注 agent 高频小额支付，同时预测市场在敏感议题上遭遇诉讼与抵制，合规成本将决定许多“agent 用例”的可行性边界。（H04）
+- **系统工程持续 Rust 化**：Airtable 数据库重写与 Rust trait coherence 等深水区讨论并行，显示“工程收益”与“语言复杂度成本”都在上台面。（H05）
+- **“权威背书”成为生成式产品的高风险表述区**：Grammarly “expert review”被质疑缺少真实专家参与，信任与披露可能演变为合规与采购门槛。（H06）
+- **基础设施与硬件侧**：Seagate 44TB HAMR 硬盘进入出货并被超大规模云厂商部署，影响归档/数据湖 TCO 与故障域设计。（H08）
 
 ---
 
 ## Cross-source Trends（趋势）
 
-### 1) IDE 原生 Agent 成为主流入口，MCP 可能成为“企业工具接入语言”
-- **发生了什么**：Xcode 26.3 将“可调用的编码代理”做成 IDE 原生能力，并支持通过 **MCP** 扩展接入工具/Agent 生态（Claude Agent、Codex 等）。
-- **信号解读**  
-  - 分发入口从“插件市场”迁移到“IDE 内置”，独立 AI coding 工具面临 **入口挤压**。  
-  - MCP 由“开发者便利”走向“企业治理接口”：谁控制 MCP server 的目录、权限、审计，谁就控制 agent 能做什么。
-- **建议动作（可执行）**  
-  - 选 1–2 个真实任务做对比评估：跨文件重构/改配置/写测试。  
-  - 制定 MCP 接入白名单 + 最小权限 + 审计日志策略；建立 **Agent 变更必须走 PR + policy checks**（测试、SAST、secret scan）。
+### 1) AI 进涉密/国防：从技术交付变成“可审计护栏”的治理竞赛（H01）
+**跨源共振**：TechCrunch / Bloomberg / Slashdot 同步报道辞职与护栏争议。  
+**核心转向**：不再只问“模型能不能跑”，而是问：
+- 用途限制是否**可验证**（白名单/黑名单、策略落地）
+- 日志、取证、第三方评估是否**可审计**
+- 数据驻留/隔离、人类在环、更新变更控制是否**可执行**
 
-相关来源：The Verge / TechCrunch / Ars Technica / Anthropic（H01）
+**行动建议（采购/评估方）**
+- 将“可审计护栏”写进合同：用途白名单、日志与取证、红队与第三方评估、数据驻留/隔离、模型更新审批与回滚。
+- 供应商尽快提供从 policy → 技术控制 → 审计证据的一体化清单（control checklist + evidence）。
 
----
-
-### 2) Agent Security：prompt 变成“控制面输入”，密钥治理成为生死线
-- **发生了什么**：Moltbook/OpenClaw 事件突出两类风险：**viral prompt 自传播**造成链式注入/越权；以及平台侧 **API keys 大规模暴露**带来盗刷与数据泄露。
-- **信号解读**  
-  - 当 Agent 能调用工具（repo、CI、云资源、工单系统）时，prompt 不再只是内容风险，而是“执行权限的入口”。  
-  - 安全能力的产品化空间扩大：prompt firewall、runtime sandbox、policy engine、凭证扫描与审计闭环。
-- **建议动作（可执行）**  
-  - 立即轮换/吊销风险密钥；启用用量告警 + 区域/IP 限制 + rate limit。  
-  - 从长效 token 迁移到 **OIDC/STS 短期凭证**；工具调用做 allowlist；对外部内容入上下文做隔离/标注。  
-  - 建立 red-team 用例：自传播 prompt、跨会话污染、越权工具调用。
-
-相关来源：Ars Technica / Wiz / Not Boring / AlibabaCloud（H02）
+相关链接：  
+- TechCrunch: OpenAI robotics lead quits — https://techcrunch.com/2026/03/07/openai-robotics-lead-caitlin-kalinowski-quits-in-response-to-pentagon-deal/  
+- Bloomberg: Head of Robotics resigns — https://www.bloomberg.com/news/articles/2026-03-07/openai-s-head-of-robotics-resigns-over-company-s-pentagon-deal  
+- Slashdot: “rushed without guardrails” — https://hardware.slashdot.org/story/26/03/07/2213221/openais-head-of-robotics-resigns-says-pentagon-deal-was-rushed-without-the-guardrails-defined
 
 ---
 
-### 3) “AI 替代 SaaS”叙事驱动再定价：ROI 证据与计费模型将被迫升级
-- **发生了什么**：金融媒体把软件股波动与 AI 自动化/替代叙事绑定，并指向新 AI 工具对垂直软件的冲击。
-- **信号解读**  
-  - 客户将更强势要求：可量化 ROI、成本替代路径、价格下探与更快价值交付。  
-  - 估值波动为并购/合作打开窗口，尤其是“数据/工作流/分发”类护城河资产。
-- **建议动作（可执行）**  
-  - 产品侧用对照实验把 AI 绑定到业务指标（节省工时、错误率、转化率）。  
-  - 定价从纯席位走向 **用量/成果/席位混合**。  
-  - 销售准备“替代/共存”两套话术与迁移路径（含风险承诺）。
+### 2) AI Security 主流化：LLM/Agent 同时增强防守与攻击（H02）
+**双信号同时出现**：
+- LLM 进入安全测试与漏洞发现的“正向案例”（Claude × Firefox）。
+- 社区讨论“首个 AI agent worm”进入时间窗口，风险从“生成内容”扩展到“自动执行动作+连锁调用”。
 
-相关来源：Bloomberg（多条）（H03）
+**对安全工程的含义**
+- SDL/红队需要新增“agent 控制面”：最小权限、工具调用审批、网络出站策略、凭证短期化、可回滚性与速率限制。
+- 高暴露面资产（浏览器、终端、IoT 摄像头）将成为 agent 自动化攻击的现实试验场。
 
----
-
-### 4) 前沿模型的资金链与算力绑定仍在重排：供应稳定性与路线风险上升
-- **发生了什么**：Anthropic 高估值要约、OpenAI 融资与 Nvidia 参与传闻/变动、叠加人员流动报道。
-- **信号解读**  
-  - “资金 + 算力 + 人才”继续决定节奏；算力方通过股权绑定可能影响供给、路线与定价。  
-  - 企业客户需要更强的第二供应商与退出机制。
-- **建议动作（可执行）**  
-  - 采购侧建立模型供应商的可用性/价格/替代预案（第二供应商 + 开源备份 + SLA）。  
-  - 推理/训练成本做情景规划（配额、区域、价格）。  
-  - 关注关键人员与产品优先级变化，对依赖功能设定 fallback。
-
-相关来源：Bloomberg / Ars Technica（H04）
+相关链接：  
+- Claude × Firefox 安全改进 — https://news.slashdot.org/story/26/03/07/204222/how-anthropics-claude-helped-mozilla-improve-firefoxs-security?utm_source=rss1.0mainlinkanon&utm_medium=feed  
+- AI agent worm 讨论 — https://dustycloud.org/blog/the-first-ai-agent-worm-is-months-away-if-that/  
+- 摄像头攻防压力（IoT attack surface）— https://arstechnica.com/security/2026/03/from-iran-to-ukraine-everyones-trying-to-hack-security-cameras/
 
 ---
 
-### 5) 监管与数据治理：平台内容责任与隐私/反垄断在多法域同步升级
-- **发生了什么**：法国对 X（Grok）调查升级；Google 搜索补救案上诉；印度最高法院就 WhatsApp 隐私争议表达强硬立场。
-- **信号解读**  
-  - AI 输出 + 社交分发耦合后，治理要求延伸到“模型侧证据链”（日志、溯源、响应）。  
-  - 反垄断与隐私会改变 default 分发、数据共享、以及训练/检索数据授权策略。
-- **建议动作（可执行）**  
-  - 建立“模型输出-分发-申诉-取证-响应时限”的治理链路与指标。  
-  - 梳理数据谱系（source/consent/retention），补齐 DPIA 与地区化策略；准备默认绑定受限时的渠道替代方案。
+### 3) Edge AI 工具链换代：LiteRT 接棒 TFLite，端侧成为默认选项（H03）
+**趋势判断**：端侧推理从“可选”走向“默认”（隐私/成本/低延迟/离线），工具链在 2026 进入重排期。  
+**关键变化**：TensorFlow 2.21 强化 LiteRT，并对齐 GPU/NPU 加速与更顺滑的 PyTorch-to-edge 路径。
 
-相关来源：TechCrunch / Ars Technica / The Verge / Bloomberg / Cryptography Engineering（H05/H07）
+**迁移与落地要点**
+- 盘点存量 TFLite：自定义算子、后处理链、delegate 依赖。
+- 以延迟/内存/功耗/冷启动为指标跑 LiteRT 基准；建立机型矩阵回归。
+- 避免过度绑定单一 delegate；新项目优先选稳定中间表示（如 ONNX）做跨框架出口。
+
+相关链接：  
+- TF 2.21 & LiteRT 报道 — https://www.marktechpost.com/2026/03/06/google-launches-tensorflow-2-21-and-litert-faster-gpu-performance-new-npu-acceleration-and-seamless-pytorch-edge-deployment-upgrades/
 
 ---
 
-### 6) Open-weight 模型向垂直落地推进：local dev / coding agent / UI localization 加速模块化
-- **发生了什么**：Qwen3-Coder-Next 聚焦 coding agent 与本地开发；Holo2 强调 UI 本地化；Hugging Face 讨论开源生态演进。
-- **信号解读**  
-  - “可自托管 + 可控成本 + 数据不出域”推动企业在代码/本地化等场景更快采纳开放权重。  
-  - AI 能力将被组件化嵌入工程流水线（code review、i18n、doc generation）。
-- **建议动作（可执行）**  
-  - 按场景拆分评测：代码修复/PR 生成/UI 文案本地化；建立模型版本管理与回归测试。  
-  - 核对权重许可与输出责任边界，避免合规技术债。
+### 4) Agent Economy 的“支付层”提前铺设，但合规边界更硬（H04）
+**市场侧**：稳定币公司押注 agent 高频小额支付基础设施；  
+**监管侧**：预测市场在战争/政治等敏感议题遭遇诉讼与抵制，提示“可用例边界”会先被合规与舆情画出来。
 
-相关来源：MarkTechPost / Hugging Face（H06）
+**建议：Agent 支付最小合规架构（Minimum Compliance Architecture）**
+- agent 身份与主账户绑定（可追责）
+- 可撤销/可过期委托授权 + 额度/频率限制
+- 可解释交易日志与对账
+- KYC/AML、制裁名单、异常检测
+- 争议/退款流程（dispute handling）
+
+相关链接：  
+- 稳定币押注 agent payments — https://www.bloomberg.com/news/articles/2026-03-07/stablecoin-firms-bet-big-on-ai-agent-payments-that-barely-exist  
+- Polymarket 合规阻力 — https://www.bloomberg.com/news/articles/2026-03-07/polymarket-founder-says-war-bets-are-facing-growing-resistance  
+- Kalshi 诉讼 — https://news.slashdot.org/story/26/03/07/0251222/prediction-market-kalshi-sued-for-not-paying-54-million-for-bets-on-khameneis-death?utm_source=rss1.0mainlinkanon&utm_medium=feed
+
+---
+
+### 5) 系统工程 Rust 化继续：收益确定，复杂度也在上升（H05）
+**工程信号**：Airtable 数据库重写 Rust。  
+**社区信号**：trait coherence、context-generic impl 等讨论升温，说明团队在“规模化采用”阶段会碰到语言与抽象边界成本。
+
+**可复用迁移打法**
+- 从高风险/高收益模块切入（解析器、网络栈、存储子模块）
+- 明确 FFI 边界与错误/内存模型
+- 基准与回归：尾延迟、内存、崩溃率、产线可观测性
+- unsafe 审计与依赖治理制度化
+
+相关链接：  
+- Airtable：Rewriting Our Database in Rust — https://medium.com/airtable-eng/rewriting-our-database-in-rust-f64e37a482ef  
+- coherence 实践讨论 — https://contextgeneric.dev/blog/rustlab-2025-coherence
+
+---
+
+### 6) “权威背书”成为生成式产品的合规雷区（H06）
+**事件**：Grammarly “expert review”被质疑缺少真实专家参与/披露不足。  
+**泛化影响**：凡是使用“专家/审阅/权威”表述的 AI 产品，都需要可验证披露（what is AI vs what is human），否则在口碑、监管与企业采购关口会同时受挤压。
+
+相关链接：  
+- TechCrunch: Grammarly expert review 质疑 — https://techcrunch.com/2026/03/07/grammarlys-expert-review-is-just-missing-the-actual-experts/
 
 ---
 
 ## High-signal Singles（重要单条更新）
-- **Microsoft：拟建 Publisher Content Marketplace（PCM）**——把内容授权条款、用量报告、对接方式做成“内容授权市场”，面向 RAG/grounding 提供标准采购路径；可能重塑内容方与模型/平台的议价与合规默认选项。  
-  来源：The Verge（H08）
-- **Cloudflare：R2 Local Uploads**——就近写入、异步复制，让对象“立即可用”同时官方称全球上传延迟最高降 75%；会影响跨洲数据采集、媒体/日志上行与多地域写入架构取舍。  
-  来源：Cloudflare Blog（H09）
+
+### Seagate 44TB HAMR 硬盘进入出货，并已在超大规模云厂商生产部署（H08）
+**为什么重要**
+- 改变冷数据/备份/归档每 TB 成本与机柜密度假设（storage TCO）。
+- 单盘更大意味着**重建窗口更长**、故障域设计与纠删码参数需重新校准。
+- 对 AI 数据湖的长周期留存（训练数据、日志、可追溯/取证数据）影响直接。
+
+**建议**
+- 用 44TB 单盘更新 $/TB、功耗/散热、机柜密度与备件策略模型。
+- 重新评估纠删码与 rebuild 策略（更大盘=更长 rebuild time）。
+
+链接：  
+- https://hardware.slashdot.org/story/26/03/07/0649230/seagate-just-unleashed-44tb-hard-drives?utm_source=rss1.0mainlinkanon&utm_medium=feed
 
 ---
 
 ## Company Radar（公司雷达）
-- **Apple**：Xcode 原生引入 Agentic Coding + MCP，正在把“AI 编码入口”收回到 IDE 体系内；对插件生态与独立工具的渠道冲击显著。（H01）
-- **Anthropic**：一手推进 Claude Agent 进入 Xcode，另一手强化福祉/安全叙事与研究输出，同时 Claude Code 持续迭代，攻“开发者粘性 + 企业治理问卷”。（H01/H12/H03/H04）
-- **OpenAI**：与 Xcode 的 Codex 集成带来开发者端触达；同时融资与人员流动报道提升外界对路线稳定性的关注。（H01/H04）
-- **Nvidia**：作为算力与资本双角色，关于参与 OpenAI 融资的消息凸显其对上游模型公司的绑定意图与市场关注。（H04）
-- **Microsoft**：PCM 若推进，将把“授权内容”做成平台能力，与 Azure/检索/RAG 生态强耦合，潜在成为企业合规采购默认入口。（H08）
-- **Cloudflare**：从边缘网络优势延伸到对象存储写入路径优化，继续以“体验级能力”切入数据面基础设施。（H09）
-- **GitHub**：Dependabot OIDC + 开源 Proxy 强化供应链安全与可审计性，呼应“密钥治理”大趋势。（H10）
-- **AWS**：围绕多账号复制、多 Region 身份韧性与数据库控制台体验做系统性补齐，偏向“平台团队可立刻落地”的改进。（H11）
-- **X（Twitter）/Meta（WhatsApp）/Google**：分别在内容治理刑事风险、隐私合规、反垄断补救上承压，体现平台监管进入更高强度阶段。（H05/H07）
+
+### OpenAI
+- **风险画像**：国防/涉密合作把“治理可信度”与“人才稳定性”直接绑定；对外需证明护栏可审计，对内需管理价值观与交付节奏冲突。（H01）
+- **并行信号**：ChatGPT “adult mode”延迟（产品节奏/政策敏感度）。  
+  - https://techcrunch.com/2026/03/07/openai-delays-chatgpts-adult-mode-again/
+
+### Anthropic
+- **正向品牌信号**：Claude 被用于提升 Firefox 安全（安全能力进入主流叙事）。（H02）
+- **弱信号**：官网 sitemap 更新（events/learn/supported-countries），暂不指向明确发布；建议低成本监控地区可用性与政策页变化。（H10）  
+  - https://www.anthropic.com/events  
+  - https://www.anthropic.com/learn
+
+### Google / TensorFlow
+- **端侧战略更明确**：TF 2.21 + LiteRT 强化端侧推理主线，并强调 NPU/GPU 与 PyTorch-to-edge 的开发体验。（H03）
+
+### Grammarly
+- **信任与合规压力上升**：营销措辞与实际交付不一致会迅速触发媒体与用户反弹；企业采购会更看重披露、证据链与责任条款。（H06）
+
+### Airtable
+- **技术栈升级案例**：数据库 Rust 重写为行业提供迁移样板（风险控制、渐进替换、可观测与性能回归方法论）。（H05）
+
+### Seagate
+- **基础设施变量**：44TB HAMR 商用落地加速，云厂商生产部署意味着供应链和运维体系开始“认账”。（H08）
 
 ---
 
 ## DevTools Releases（工具链更新）
-- **Xcode 26.3（Apple）**：Agentic Coding（Claude Agent / OpenAI Codex）+ 支持 MCP 扩展第三方工具接入。  
-  参考：The Verge / TechCrunch / Ars Technica / Anthropic（H01）
-- **GitHub Dependabot**
-  - 支持 **OIDC authentication** 访问私有 registry（减少长效 secrets）。  
-    https://github.blog/changelog/2026-02-03-dependabot-now-supports-oidc-authentication
-  - **Dependabot Proxy 开源（MIT）**（利于企业自托管与审计）。  
-    https://github.blog/changelog/2026-02-03-the-dependabot-proxy-is-now-open-source-with-an-mit-license  
-  （H10）
-- **AWS（平台/控制台能力）**
-  - DynamoDB Global Tables：支持跨账号复制  
-  - IAM Identity Center：支持多 Region 复制提升韧性  
-  - RDS：控制台连接体验增强（统一连接信息、多语言代码片段）  
-  - Aurora DSQL：NUMERIC 索引支持  
-  参考：AWS What’s New（H11）
-- **Claude Code（Anthropic）**
-  - v2.1.30：https://github.com/anthropics/claude-code/releases/tag/v2.1.30  
-  - v2.1.31：https://github.com/anthropics/claude-code/releases/tag/v2.1.31  
-  重点：PDF 读取优化、会话续接等可用性改进。（H12）
+- **TensorFlow 2.21 & LiteRT（edge inference）**：LiteRT 被推向生产可用并承接/替代 TFLite 叙事；关注 GPU 性能、NPU acceleration 以及 PyTorch-to-edge workflow 的实际兼容与迁移成本。（H03）  
+  - https://www.marktechpost.com/2026/03/06/google-launches-tensorflow-2-21-and-litert-faster-gpu-performance-new-npu-acceleration-and-seamless-pytorch-edge-deployment-upgrades/
+- **Rust 工程实践素材（非版本发布但对工具链/最佳实践有指导）**：Airtable Rust 重写数据库、trait coherence 实战文章，有助于更新团队的 Rust styleguide、review checklist 与抽象边界策略。（H05）  
+  - https://medium.com/airtable-eng/rewriting-our-database-in-rust-f64e37a482ef  
+  - https://contextgeneric.dev/blog/rustlab-2025-coherence
 
 ---
 
 ## Research Watch（研究趋势）
-- **Anthropic：Economic Index “primitives”** ——试图以更基础的度量单元讨论 AI 的经济影响，为“就业/生产率影响评估”提供方法论组件；可能进入政策、媒体与企业内生产率评估框架。  
-  https://www.anthropic.com/research/economic-index-primitives （H12）
-- **Hugging Face：开源生态叙事持续加强** ——从“DeepSeek moment”到 “AI+”，强调开放生态在模型扩散与落地中的结构性作用；与开放权重在 coding/local dev 的趋势形成互证。  
-  https://huggingface.co/blog/huggingface/one-year-since-the-deepseek-moment-blog-3 （H06）
-- **Agent Safety as applied security**（事件驱动的研究/工程方向）——viral prompt、跨会话污染、工具越权、密钥泄露的组合，正在把研究关注点从“对齐/内容”推向“运行时策略与审计”。（H02）
+- **AI Agent 威胁建模（Threat Modeling）成为新研究主线**：从 prompt injection 扩展到“工具/权限/环境”的系统性安全：可执行链、横向移动、持久化与可回滚控制将成为论文与工业实践共同关注点。（H02）
+- **On-device/Edge 的系统性优化路径**：量化/剪枝、算子覆盖与异构加速（NPU delegate）会从“技巧”走向“平台能力”，研究与工程将围绕可迁移的中间表示、可复现实验与机型矩阵评估展开。（H03）
+- **可审计治理（Auditable Guardrails）**：涉密/GovCloud 场景把“AI 安全”推向可验证证据链（logs, audits, change control）。围绕 policy-to-control 的形式化与工程落地将更像“合规工程学”，而不仅是模型对齐研究。（H01）
+- **量子生态的标准化尝试（弱信号）**：国产量子计算 OS “Origin Pilot”开放下载的消息象征意义大于技术细节；建议等待权威文档再判断其 IR/编译/调度与主流生态（Qiskit/Cirq）兼容性。（H09）  
+  - https://tech.slashdot.org/story/26/03/07/0038223/china-releases-first-homegrown-quantum-computing-os?utm_source=rss1.0mainlinkanon&utm_medium=feed
