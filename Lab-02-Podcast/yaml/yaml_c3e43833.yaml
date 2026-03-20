@@ -1,0 +1,98 @@
+kind: workflow
+name: podcast-workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_podcast
+  actions:
+    # 1. 保存用户原始输入主题
+    - kind: SetVariable
+      id: set_user_topic
+      variable: Local.UserTopic
+      value: =System.LastMessageText
+
+    # 2. 调用 podcast-search-agent 生成大纲
+    - kind: InvokeAzureAgent
+      id: podcast_search_agent
+      description: 根据用户输入主题生成播客大纲
+      conversationId: =System.ConversationId
+      agent:
+        name: podcast-search-agent
+      input:
+        messages: =UserMessage("请根据这个主题生成播客大纲：" & Local.UserTopic)
+      output:
+        messages: Local.PodcastOutlineMessage
+        autoSend: true
+
+    # 3. 调用 podcast-content-agent 根据大纲生成内容脚本候选稿
+    - kind: InvokeAzureAgent
+      id: podcast_content_agent
+      description: 根据播客大纲生成内容脚本候选稿
+      conversationId: =System.ConversationId
+      agent:
+        name: podcast-content-agent
+      input:
+        messages: =Local.PodcastOutlineMessage
+      output:
+        messages: Local.DraftScriptMessage
+        autoSend: true
+
+    # 4. 问用户是否确认当前脚本
+    - kind: Question
+      id: confirm_draft_script
+      variable: Local.UserConfirmation
+      entity: StringPrebuiltEntity
+      prompt: "当前脚本已生成，是否确认使用该脚本？如确认请输入 Yes，输入其他内容则会重新生成脚本。"
+      skipQuestionMode: SkipOnFirstExecutionIfVariableHasValue
+
+    # 5. 判断用户是否输入 Yes
+    - kind: ConditionGroup
+      id: condition_check_confirmation
+      conditions:
+        # 分支：用户输入 Yes，进入保存脚本环节
+        - id: condition_user_confirm_yes
+          condition: =Upper(Trim(Local.UserConfirmation))="YES"
+          actions:
+            # 5.1 调用 podcast-script-agent 保存最终脚本
+            - kind: InvokeAzureAgent
+              id: podcast_script_agent
+              description: 保存最终确认的播客脚本
+              conversationId: =System.ConversationId
+              agent:
+                name: podcast-script-agent
+              input:
+                # 将 content agent 生成的最新脚本消息传给 script agent 进行保存
+                messages: =Local.DraftScriptMessage
+              output:
+                messages: Local.FinalScriptMessage
+                autoSend: true
+            # 5.2 结束会话
+            - kind: EndConversation
+              id: end_podcast_workflow
+      elseActions:
+        # 分支：用户未输入 Yes（包括 No 或其他），重新生成脚本并再次确认
+        - kind: InvokeAzureAgent
+          id: regenerate_podcast_content_agent
+          description: 用户未确认脚本，重新生成内容脚本候选稿
+          conversationId: =System.ConversationId
+          agent:
+            name: podcast-content-agent
+          input:
+            # 仍然基于同一份大纲重新生成脚本
+            messages: =Local.PodcastOutlineMessage
+          output:
+            messages: Local.DraftScriptMessage
+            autoSend: true
+        # 再次询问用户是否确认新脚本
+        - kind: Question
+          id: reconfirm_draft_script
+          variable: Local.UserConfirmation
+          entity: StringPrebuiltEntity
+          prompt: "已根据大纲重新生成脚本，是否确认当前脚本？如确认请输入 Yes，输入其他内容将继续重新生成脚本。"
+          skipQuestionMode: SkipOnFirstExecutionIfVariableHasValue
+        # 回到条件判断节点形成循环
+        - kind: GotoAction
+          id: goto_condition_check_confirmation
+          actionId: condition_check_confirmation
+
+id: ""
+description: "播客脚本三 Agent 工作流：搜索生成大纲 -> 内容生成脚本 -> 用户确认后由脚本 Agent 保存"

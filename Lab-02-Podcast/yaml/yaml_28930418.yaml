@@ -1,0 +1,79 @@
+kind: workflow
+name: podcast-workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_podcast
+  actions:
+    - kind: SetVariable
+      id: set_user_input
+      variable: Local.UserInput
+      value: =UserMessage(System.LastMessageText)
+    - kind: InvokeAzureAgent
+      id: podcast_search_agent
+      description: Use user input to generate podcast outline
+      conversationId: =System.ConversationId
+      agent:
+        name: podcast-search-agent
+      input:
+        messages: =Local.UserInput
+      output:
+        messages: Local.PodcastOutlineMessage
+        autoSend: true
+    - kind: InvokeAzureAgent
+      id: podcast_content_agent
+      description: Generate podcast content draft based on outline
+      conversationId: =System.ConversationId
+      agent:
+        name: podcast-content-agent
+      input:
+        messages: =Local.PodcastOutlineMessage
+      output:
+        messages: Local.DraftScriptMessage
+        autoSend: true
+    - kind: Question
+      id: confirm_draft
+      variable: Local.UserConfirm
+      entity: StringPrebuiltEntity
+      prompt: |-
+        以下是为你生成的播客脚本草稿（由 podcast-content-agent 生成）：
+        {Last(Local.DraftScriptMessage).Text}
+
+        如果你确认该脚本，请输入 "Yes"。
+        如果不满意，请输入任意其他内容，我会为你重新生成脚本。
+      alwaysPrompt: false
+    - kind: ConditionGroup
+      id: check_user_confirm
+      conditions:
+        - id: condition_confirm_yes
+          condition: =Lower(Local.UserConfirm) = "yes"
+          actions:
+            - kind: InvokeAzureAgent
+              id: podcast_script_agent
+              description: Save final podcast script
+              conversationId: =System.ConversationId
+              agent:
+                name: podcast-script-agent
+              input:
+                messages: =Local.DraftScriptMessage
+              output:
+                messages: Local.FinalScriptMessage
+                autoSend: true
+            - kind: EndConversation
+              id: end_after_save
+      elseActions:
+        - kind: InvokeAzureAgent
+          id: podcast_content_agent_regenerate
+          description: Regenerate podcast content draft based on outline after user rejected previous draft
+          conversationId: =System.ConversationId
+          agent:
+            name: podcast-content-agent
+          input:
+            messages: =Local.PodcastOutlineMessage
+          output:
+            messages: Local.DraftScriptMessage
+            autoSend: true
+        - kind: GotoAction
+          id: goto_confirm_again
+          actionId: confirm_draft
+id: ""
+description: "Podcast workflow: outline -> draft -> user confirmation loop -> final save"

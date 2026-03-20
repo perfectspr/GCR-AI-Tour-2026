@@ -1,0 +1,105 @@
+kind: workflow
+name: podcast-workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_podcast_workflow
+  actions:
+    - kind: SetVariable
+      id: set_variable_user_input
+      variable: Local.UserInput
+      value: =UserMessage(System.LastMessageText)
+
+    - kind: InvokeAzureAgent
+      id: podcast_search_agent
+      description: 调用 podcast-search-agent 围绕用户输入内容生成播客大纲
+      conversationId: =System.ConversationId
+      agent:
+        name: "podcast-search-agent"
+      input:
+        messages: =Local.UserInput
+      output:
+        messages: Local.PodcastOutline
+        autoSend: false
+
+    - kind: InvokeAzureAgent
+      id: podcast_content_agent
+      description: 调用 podcast-content-agent 根据大纲生成内容脚本草稿
+      conversationId: =System.ConversationId
+      agent:
+        name: "podcast-content-agent"
+      input:
+        messages: =Local.PodcastOutline
+      output:
+        messages: Local.ContentDraft
+        autoSend: false
+
+    - kind: SetVariable
+      id: set_variable_turncount
+      variable: Local.TurnCount
+      value: =If(IsBlank(Local.TurnCount), 1, Local.TurnCount + 1)
+
+    - kind: SendActivity
+      id: send_activity_show_draft
+      activity: |-
+        下面是为你生成的播客内容脚本草稿（第 {Local.TurnCount} 版）：
+
+        {Local.ContentDraft}
+
+        如果你满意当前脚本，请回复 "Yes" 确认保存；
+        如果不满意，请回复其他任意内容，我会帮你重新生成。
+
+    - kind: Question
+      id: question_confirm_content
+      variable: Local.ConfirmContent
+      entity: StringPrebuiltEntity
+      skipQuestionMode: SkipOnFirstExecutionIfVariableHasValue
+      prompt: 请确认是否保存当前脚本？回复 Yes 确认，或回复其他内容重新生成。
+
+    - kind: ConditionGroup
+      id: condition_check_confirmation
+      conditions:
+        - id: condition_user_confirm_yes
+          condition: =Upper(Trim(Local.ConfirmContent))="YES"
+          actions:
+            - kind: InvokeAzureAgent
+              id: podcast_script_agent
+              description: 调用 podcast-script-agent 保存最终内容脚本
+              conversationId: =System.ConversationId
+              agent:
+                name: "podcast-script-agent"
+              input:
+                messages: =Local.ContentDraft
+              output:
+                messages: Local.FinalScript
+                autoSend: false
+            - kind: SendActivity
+              id: send_activity_saved
+              activity: |-
+                已根据你的确认保存当前播客脚本：
+
+                {Local.FinalScript}
+
+                感谢使用播客创作助手！
+            - kind: EndConversation
+              id: end_podcast_workflow
+      elseActions:
+        - kind: SetVariable
+          id: reset_confirm_content
+          variable: Local.ConfirmContent
+          value: =Blank()
+        - kind: InvokeAzureAgent
+          id: podcast_content_agent_regenerate
+          description: 重新调用 podcast-content-agent 生成新的内容脚本草稿
+          conversationId: =System.ConversationId
+          agent:
+            name: "podcast-content-agent"
+          input:
+            messages: =Local.PodcastOutline
+          output:
+            messages: Local.ContentDraft
+            autoSend: false
+        - kind: GotoAction
+          id: goto_show_draft_again
+          actionId: send_activity_show_draft
+id: ""
+description: "Podcast 三 Agent 串联工作流：大纲生成 -> 内容脚本 -> 人工确认 -> 脚本保存"
