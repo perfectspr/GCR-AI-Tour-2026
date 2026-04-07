@@ -2,15 +2,13 @@
 
 本仓库包含多个可运行 Lab，当前主要内容如下：
 
-- `Lab-01-Tech-Insights/`：基于 RSS/Sitemap/HTML 的技术动态聚合与洞察 Lab
+- `Lab-01-Tech-Insights/`：基于新闻源的技术动态聚合与洞察 Lab
 - `Lab-02-Podcast/`：基于 Azure AI 与 GitHub Actions 的自动化播客生成 Lab
 - `Lab-03-GitHub-Copilot/`：围绕 GitHub Copilot 与 Copilot SDK 的 PPT 生成 Lab
 
 ## Lab-01-Tech-Insights（你将做什么）
 
-这是一个基于 RSS/Sitemap/HTML 的「技术动态聚合与洞察」Lab：抓取多源更新 → 归一为信号 → 聚类热点 → 生成洞察与 Markdown 报告。
-
-本 Lab 已完成向 **GitHub Agentic Workflows (gh-aw)** 的迁移。
+这是一个基于新闻源的「技术动态聚合与洞察」Lab：抓取多源更新 → 归一为信号 → 聚类热点 → 生成洞察与 Markdown 报告。
 
 你将得到：
 - `report.md`：一份可阅读的技术洞察报告（中文）

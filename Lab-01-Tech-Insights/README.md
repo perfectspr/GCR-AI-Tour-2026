@@ -9,7 +9,7 @@
 ### 架构图
 
 ```text
-RSS/Sitemap/HTML 源 (60+)
+RSS 源 (20 个精选)
     ↓ 阶段1: 信号抓取
 MCP Scripts (Python 工具)
     ↓ raw_signals.json
@@ -22,6 +22,9 @@ LLM (Copilot) + insight_or_fallback
     ↓ 阶段4: 报告生成
 LLM (Copilot) + render_report_or_fallback
     ↓ report.md
+    ↓ safe-outputs 自动创建 PR
+合并 PR → deploy-pages 自动触发
+    ↓
 GitHub Pages (在线查看)
 ```
 
@@ -88,10 +91,11 @@ python3 --version  # 确认 3.10+
    - YAML frontmatter 结构说明：
      - `name:` 工作流名称
      - `on: workflow_dispatch:` 手动触发
-     - `permissions: contents: write` 允许写入文件
-     - `tools:` 列出 7 个 MCP Script Python 工具
+     - `permissions: contents: read` 允许读取仓库内容（写入通过 safe-outputs 机制）
+     - `tools:` 声明 `bash` 和 `edit` 两个内置工具
+     - `mcp-scripts:` 定义 7 个 MCP Script Python 工具（抓取、聚类、洞察、报告等）
      - `engine: copilot` 使用 GitHub Copilot 作为 AI 引擎
-     - `network: true` 允许网络访问（抓取 RSS）
+     - `network: allowed:` 显式域名白名单（列出所有允许访问的 RSS 源域名）
    - Markdown 正文是给 AI 的自然语言指令，分为 4 个阶段。
 
 2. 浏览 MCP Scripts 目录：`Lab-01-Tech-Insights/mcp-scripts/`
@@ -108,7 +112,8 @@ python3 --version  # 确认 3.10+
 | write_text_file.py | 文件写入工具 |
 
 3. 查看数据源：`Lab-01-Tech-Insights/input/api/rss_list.json`
-   - 包含 60+ 个技术新闻源。
+   - 包含 20 个精选 RSS 源（10 家科技公司 + 10 个前沿社区/媒体）。
+   - 每个源有 `signal_level`（S/A/B）字段，权重分别为 30/20/10，影响热点排序。
 
 4. 查看前端：`Lab-01-Tech-Insights/frontend/`
    - `index.html` + `main.js` 实现浏览器端 Markdown 渲染为 HTML。
@@ -145,7 +150,7 @@ python3 --version  # 确认 3.10+
 cd GCR-AI-Tour-2026
 gh aw compile .github/workflows/tech-insight.md
 ```
-- 这会在同目录生成 `tech-insight.md.lock.yml`，即编译后的 GitHub Actions YAML 文件。
+- 这会在同目录生成 `tech-insight.lock.yml`，即编译后的 GitHub Actions YAML 文件。
 
 ### 步骤 4: 推送编译结果
 ```bash
@@ -166,11 +171,13 @@ gh workflow run "Tech Insight Workflow"
 
 ### 步骤 6: 观察运行
 - 在 Actions 页面点击正在运行的 workflow run。
-- 展开 job 查看实时日志。
-- 工作流一般需要 3-5 分钟完成。
+- 展开 `agent` job 查看实时日志（这是 AI 执行主要工作的步骤）。
+- 工作流一般需要 **15-20 分钟**完成（其中 agent 步骤约 10-15 分钟）。
 
-### 步骤 7: 检查输出
-- 运行成功后，拉取最新代码：
+### 步骤 7: 合并 PR 并检查输出
+- 运行成功后，工作流会通过 safe-outputs 机制**自动创建一个 PR**（标题以 `[tech-insight]` 开头）。
+- 在仓库 **Pull requests** 标签页找到该 PR，Review 后点击 **Merge**。
+- 合并后拉取最新代码：
 ```bash
 git pull origin main
 ```
@@ -188,7 +195,7 @@ git pull origin main
 ```bash
 code Lab-01-Tech-Insights/output/report.md
 ```
-- 观察报告结构：24h 摘要 → 趋势 → 重要更新 → 公司雷达。
+- 观察报告结构：24h 摘要 → Cross-source Trends（跨源趋势） → High-signal Singles（重要单条更新） → Company Radar（公司雷达） → DevTools Releases（工具链更新） → Research Watch（研究趋势）。
 
 2. 本地预览前端：
 ```bash
@@ -214,31 +221,43 @@ python3 -m http.server 8000 --directory Lab-01-Tech-Insights/frontend
 2. 在 JSON 数组末尾添加一个新源：
 ```json
 {
-  "id": 100,
+  "id": 21,
   "name": "阮一峰的网络日志",
-  "platform": "custom",
+  "platform": "ruanyifeng",
   "source": "rss",
-  "url": "https://www.ruanyifeng.com/blog/atom.xml"
+  "url": "https://www.ruanyifeng.com/blog/atom.xml",
+  "signal_level": "B"
 }
 ```
+
+> 💡 `signal_level` 影响热点排序权重：`S`（30）> `A`（20）> `B`（10）。新源建议先设为 `B`。
 
 推荐的中文技术源：
 - InfoQ 中文: `https://www.infoq.cn/feed`
 - 36氪: `https://36kr.com/feed`
 
-3. 提交并推送
+3. **关键步骤：更新网络白名单**
+   - 打开 `.github/workflows/tech-insight.md`。
+   - 在 `network: allowed:` 数组中添加新源的域名：
+   ```yaml
+   - "www.ruanyifeng.com"
+   ```
+   - ⚠️ 如果跳过这一步，sandbox 防火墙会阻断对新源的访问（返回 403）。
+
+4. 重新编译并推送
 ```bash
-git add Lab-01-Tech-Insights/input/api/rss_list.json
+gh aw compile .github/workflows/tech-insight.md
+git add Lab-01-Tech-Insights/input/api/rss_list.json .github/workflows/
 git commit -m "feat: add custom RSS source"
 git push origin main
 ```
 
-4. 再次手动触发工作流
+5. 再次手动触发工作流
 ```bash
 gh workflow run "Tech Insight Workflow"
 ```
 
-5. 等待运行完成后拉取代码，查看新报告是否包含了新源的内容。
+6. 等待运行完成后合并 PR、拉取代码，查看新报告是否包含了新源的内容。
 
 ---
 
@@ -288,11 +307,15 @@ on:
 
 1. 打开仓库 → **Settings** → 左侧 **Pages**。
 2. Source 选择 **GitHub Actions**。
-3. 手动触发 `Deploy GitHub Pages` 工作流：
+3. GitHub Pages 会在以下情况自动部署：
+   - 当 `Lab-01-Tech-Insights/frontend/` 目录有文件变更被推送到 `main` 分支时（例如合并 Tech Insight PR 后）。
+   - 也可以手动触发：
 ```bash
 gh workflow run "Deploy GitHub Pages"
 ```
 4. 访问 `https://<你的用户名>.github.io/GCR-AI-Tour-2026/` 查看在线版报告。
+
+> 💡 完整发布链路：Tech Insight 工作流完成 → safe-outputs 创建 PR → 合并 PR → `frontend/report.md` 变更触发 deploy-pages → GitHub Pages 自动更新。
 
 ---
 
@@ -316,11 +339,11 @@ gh workflow run "Deploy GitHub Pages"
 GCR-AI-Tour-2026/
 ├── .github/workflows/
 │   ├── tech-insight.md           # gh-aw 工作流定义
-│   ├── tech-insight.md.lock.yml  # 编译后的 Actions YAML
+│   ├── tech-insight.lock.yml     # 编译后的 Actions YAML
 │   └── deploy-pages.yml          # Pages 部署工作流
 ├── Lab-01-Tech-Insights/
 │   ├── mcp-scripts/              # MCP Script 工具
-│   ├── input/api/rss_list.json   # 数据源
+│   ├── input/api/rss_list.json   # 数据源（20 个精选 RSS）
 │   ├── frontend/                 # 展示前端
 │   └── output/                   # 运行时输出
 ```
